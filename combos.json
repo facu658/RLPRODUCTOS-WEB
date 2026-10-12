@@ -1,0 +1,10 @@
+[
+  {
+    "titulo": "Combo de lavado",
+    "articulos": ["A014", "A001", "A002"]
+  },
+  {
+    "titulo": "Combo de cuidado",
+    "articulos": ["A008", "A010"]
+  }
+]
