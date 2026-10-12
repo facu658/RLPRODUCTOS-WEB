@@ -179,9 +179,9 @@
       }).join(', ');
       const precio = precioVentaCombo(combo);
       const card = document.createElement('article');
-      card.className = 'bg-white rounded-xl shadow-md p-5 flex flex-col justify-between fade-in';
+      card.className = 'bg-white rounded-xl shadow-md p-5 flex flex-col sm:flex-row gap-5 justify-between fade-in';
       card.innerHTML = `
-        <div>
+        <div class="flex-1 min-w-0">
           <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">COMBO</span>
           <h3 class="text-lg font-semibold text-gray-800 mt-3">${escaparHtml(combo.titulo)}</h3>
           <p class="text-sm text-gray-600 mt-2">${escaparHtml(componentes)}</p>
@@ -190,7 +190,10 @@
             ? 'Precio no disponible: revisa los códigos y precios combo.'
             : '$' + precio.toLocaleString('es-AR')}</p>
         </div>
-        <div class="flex items-center justify-between bg-gray-50 p-2 mt-4 rounded-lg border border-gray-200">
+        ${combo.foto ? `<img src="${CARPETA_IMAGENES}${encodeURIComponent(combo.foto)}"
+          alt="Imagen de ${escaparHtml(combo.titulo)}"
+          class="w-full sm:w-1/3 max-h-96 object-contain rounded-lg cursor-pointer bg-gray-50">` : ''}
+        <div class="flex items-center justify-between bg-gray-50 p-2 mt-4 sm:mt-0 rounded-lg border border-gray-200 self-end sm:self-center">
           <button type="button" data-action="restar" data-codigo="${codigo}" aria-label="Quitar combo"
             class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">-</button>
           <span id="qty-${codigo}" class="text-sm font-bold text-gray-800">${obtenerCantidad(codigo)}</span>

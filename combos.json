@@ -1,10 +1,12 @@
 [
   {
-    "titulo": "Combo de lavado",
-    "articulos": ["A014", "A001", "A002"]
+    "titulo": "Combo Full Toxic Shine",
+    "articulos": ["A013", "A014", "A010", "A009"],
+    "foto": "COMBO-FULL.jpeg"
   },
   {
-    "titulo": "Combo de cuidado",
-    "articulos": ["A008", "A010"]
+    "titulo": "Super Combo Toxic Shine",
+    "articulos": ["A001", "A007", "A013"],
+    "foto": "SUPER-COMBO.jpeg"
   }
 ]
