@@ -166,7 +166,7 @@
     "codigo": "A014",
     "precio combo": "$8.200,00",
     "venta por menor": "$8.500,00",
-    "foto": "A014.JPEG",
+    "foto": "A014.jpeg",
     "categoria": "Shampoo",
     "descripcion": "Shampoo Hyper Black  con pH neutro y cera de carnauba para un lavado seguro y brillo duradero. Protege y cuida tu vehículo. ¡Compra ahora."
   },
@@ -189,7 +189,7 @@
     "descripcion": "Protege y restaura tu chasis con Hits Bones. Fácil de usar, resistente al agua y con fragancia a uva. ¡Dale un nuevo brillo a tu vehículo."
   },
   {
-    "articulo": "HIT BONE 4 LTROS (ACONDICIONADOR PASA RUEDA)",
+    "articulo": "HIT BONE 600 ML (ACONDICIONADOR PASA RUEDA)",
     "codigo": "A016",
     "precio combo": "$27.800,00",
     "venta por menor": "$28.500,00",
@@ -198,7 +198,7 @@
     "descripcion": "Protege y da brillo a pasaruedas y chasis con Hits Bones Galón. Ajusta el brillo y prolonga la vida útil de tu vehículo. ¡Compra ahora."
   },
   {
-    "articulo": "SHAMPOO WAX 4 LITROS (SHAMPOO)",
+    "articulo": "SHAMPOO WAX 600 ML (SHAMPOO)",
     "codigo": "A023",
     "precio combo": "$27.800,00",
     "venta por menor": "$29.500,00",
@@ -207,7 +207,7 @@
     "descripcion": "Shampoo WAX con PH neutro, limpieza efectiva sin dañar ceras ni selladores. Deja brillo wet look y aroma a cereza. ¡Protegé tu auto hoy."
   },
   {
-    "articulo": "HYPER BLACK 4 LITROS (SHAMPOO)",
+    "articulo": "HYPER BLACK 600 ML (SHAMPOO)",
     "codigo": "A024",
     "precio combo": "$30.000,00",
     "venta por menor": "$32.000,00",
@@ -216,7 +216,7 @@
     "descripcion": "Shampoo Hyper Black Galón con pH neutro y cera de carnauba para un lavado seguro y brillo duradero. Protege y cuida tu vehículo. ¡Compra ahora."
   },
   {
-    "articulo": "ALL REMOVE 4 LITROS (LIMPIADOR MULTI USO )",
+    "articulo": "ALL REMOVE 600 ML (LIMPIADOR MULTI USO )",
     "codigo": "A025",
     "precio combo": "$33.100,00",
     "venta por menor": "$35.000,00",
@@ -225,7 +225,7 @@
     "descripcion": "All Remove Galón elimina grasa, aceite y suciedad pesada en motores y llantas. Úsalo diluido para resultados profesionales. ¡Compra ahora y limpia a fondo."
   },
   {
-    "articulo": "All Clean 4 LITROS (LIMPIADOR MULTI USO )",
+    "articulo": "All Clean 600 ML (LIMPIADOR MULTI USO )",
     "codigo": "A026",
     "precio combo": "$23.100,00",
     "venta por menor": "$25.000,00",
@@ -234,7 +234,7 @@
     "descripcion": "All Clean ofrece limpieza eficaz con suspensión de suciedad y espuma potente. Ideal para uso directo o diluido. ¡Compralo y mantené todo impecable."
   },
   {
-    "articulo": "Uva Shake 4 LITROS (ACONDICIONADOR DE PLASTICOS )",
+    "articulo": "Uva Shake 600 ML (ACONDICIONADOR DE PLASTICOS )",
     "codigo": "A027",
     "precio combo": "$47.300,00",
     "venta por menor": "$50.000,00",
@@ -243,7 +243,7 @@
     "descripcion": "Uva Shake Galón acondiciona y protege plásticos interiores con acabado satinado y aroma a uva. ¡Cuida y perfuma tu auto hoy."
   },
   {
-    "articulo": "DARK FLUID 4 LITROS (REVIVIDOR DE NEUMATICOS)",
+    "articulo": "DARK FLUID 600 ML (REVIVIDOR DE NEUMATICOS)",
     "codigo": "A028",
     "precio combo": "$36.100,00",
     "venta por menor": "$38.000,00",
@@ -252,7 +252,7 @@
     "descripcion": "Dark Fluid acondiciona cubiertas con brillo renovado, sin dañar. Fácil aplicación y protección de 1 a 3 días. ¡Compra ahora y mejora tu vehículo."
   },
   {
-    "articulo": "CHERRY QUICK 4 LITROS (CERA )",
+    "articulo": "CHERRY QUICK 600 ML (CERA )",
     "codigo": "A029",
     "precio combo": "$22.200,00",
     "venta por menor": "$24.000,00",
@@ -261,7 +261,7 @@
     "descripcion": "Cherry Quick ofrece un brillo excepcional, ideal para usar en seco o húmedo. Remueve polvo y marcas, dejando un delicioso aroma a cereza. ¡Prueba ahora."
   },
   {
-    "articulo": "ALU WAX 4 LITROS (LIMPIADOR DE CARROCERIA )",
+    "articulo": "ALU WAX 600 ML (LIMPIADOR DE CARROCERIA )",
     "codigo": "A030",
     "precio combo": "$36.200,00",
     "venta por menor": "$38.000,00",
