@@ -9,18 +9,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
-
-    .fade-in {
-      animation: fadeIn 0.5s ease-in-out;
-    }
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
   </style>
 </head>
 
@@ -32,31 +24,24 @@
     <nav id="category-tabs" class="flex flex-wrap justify-center gap-2 mb-8" aria-label="Categorías de productos"></nav>
 
     <!-- Cuadrícula de Productos -->
-    <div id="product-catalog"
-      class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+    <div id="product-catalog" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
 
     <!-- Modal para imagen a pantalla completa -->
     <div id="modal" class="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50 hidden">
-      <img id="modal-img" src="" alt="Imagen ampliada"
-        class="max-h-[90vh] max-w-[90vw] rounded-lg bg-white object-contain shadow-2xl">
+      <img id="modal-img" src="" alt="Imagen ampliada" class="max-h-[90vh] max-w-[90vw] rounded-lg bg-white object-contain shadow-2xl">
     </div>
   </div>
 
   <!-- Barra flotante de Pedido / WhatsApp -->
-  <div id="cart-bar"
-    class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-40 transform translate-y-full transition-transform duration-300">
+  <div id="cart-bar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-40 transform translate-y-full transition-transform duration-300">
     <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
       <div>
-        <p class="text-sm font-semibold text-gray-700">Productos en el pedido: <span id="cart-count"
-            class="text-indigo-600 font-bold">0</span></p>
-        <p class="text-xs text-gray-500">Total estimado: <span id="cart-total"
-            class="font-bold text-gray-800">$0,00</span></p>
+        <p class="text-sm font-semibold text-gray-700">Productos en el pedido: <span id="cart-count" class="text-indigo-600 font-bold">0</span></p>
+        <p class="text-xs text-gray-500">Total estimado: <span id="cart-total" class="font-bold text-gray-800">$0,00</span></p>
       </div>
       <div class="flex gap-3 w-full sm:w-auto">
-        <button id="btn-limpiar"
-          class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">Limpiar</button>
-        <button id="btn-whatsapp"
-          class="flex-1 sm:flex-none px-6 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2">
+        <button id="btn-limpiar" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">Limpiar</button>
+        <button id="btn-whatsapp" class="flex-1 sm:flex-none px-6 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2">
           <span>Descargar JPG y abrir WhatsApp</span>
         </button>
       </div>
@@ -76,84 +61,145 @@
     let combosGlobal = [];
     let categoriaActual = 'Todos';
 
-    // Función que actualiza la interfaz de la barra inferior de pedidos
+    // --- utilidades ---
+    function escaparHtml(valor = '') {
+      return String(valor).replace(/[&<>"']/g, caracter => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[caracter]);
+    }
+
+    // Intenta cargar una imagen probando varias extensiones y variaciones de mayúsculas/minúsculas
+    function loadImageWithFallback(originalName) {
+      const extensions = ['.webp', '.jpeg', '.jpg', '.png', '.svg'];
+      const candidates = [];
+
+      if (!originalName) return Promise.resolve(null);
+
+      const hasExt = /\.[a-zA-Z0-9]+$/.test(originalName);
+      const base = hasExt ? originalName.replace(/\.[^/.]+$/, '') : originalName;
+      const providedExt = hasExt ? originalName.match(/\.[^/.]+$/)[0] : null;
+
+      // If original included extension, try exact first
+      if (hasExt) candidates.push(originalName);
+
+      // Try common extensions
+      for (const ext of extensions) candidates.push(base + ext);
+
+      // Also try lowercase/uppercase versions
+      const more = [];
+      candidates.forEach(c => { more.push(c.toLowerCase()); more.push(c.toUpperCase()); });
+      const all = Array.from(new Set([...candidates, ...more]));
+
+      return new Promise(resolve => {
+        let i = 0;
+        function tryNext() {
+          if (i >= all.length) return resolve(null);
+          const candidate = all[i++];
+          const url = CARPETA_IMAGENES + encodeURIComponent(candidate);
+          const img = new Image();
+          img.src = url;
+          img.alt = originalName;
+          img.className = 'w-full h-full min-h-48 bg-white object-contain p-2 group-hover:scale-105 transition-transform duration-200';
+          img.onload = () => resolve({ img, src: url, name: candidate });
+          img.onerror = () => setTimeout(tryNext, 10); // small delay then try next
+        }
+        tryNext();
+      });
+    }
+
     function actualizarInterfazTotales(pedidoActual, productos, combos) {
       const cartBar = document.getElementById('cart-bar');
       const cartCount = document.getElementById('cart-count');
       const cartTotal = document.getElementById('cart-total');
 
       const { totalItems, precioTotalCalculado, hayPrecioPendiente } = calcularTotales(productos, combos);
-
       cartCount.textContent = totalItems;
       cartTotal.textContent = '$' + precioTotalCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         + (hayPrecioPendiente ? ' + consultar precio' : '');
 
-      if (totalItems > 0) {
-        cartBar.classList.remove('translate-y-full');
-      } else {
-        cartBar.classList.add('translate-y-full');
-      }
-    }
-
-    function escaparHtml(valor = '') {
-      return String(valor).replace(/[&<>"']/g, caracter => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      })[caracter]);
+      if (totalItems > 0) cartBar.classList.remove('translate-y-full'); else cartBar.classList.add('translate-y-full');
     }
 
     function renderizarCategorias() {
       const nav = document.getElementById('category-tabs');
       const categorias = ['Todos', ...CATEGORIAS];
       nav.innerHTML = categorias.map(categoria => `
-        <button type="button" data-categoria="${escaparHtml(categoria)}"
-          class="rounded-full px-4 py-2 text-sm font-semibold transition ${categoriaActual === categoria
-            ? 'bg-indigo-600 text-white'
-            : 'bg-white text-gray-700 hover:bg-indigo-50'}">${escaparHtml(categoria)}</button>
+        <button type="button" data-categoria="${escaparHtml(categoria)}" class="rounded-full px-4 py-2 text-sm font-semibold transition ${categoriaActual === categoria ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-indigo-50'}">${escaparHtml(categoria)}</button>
       `).join('');
       nav.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', () => {
-          categoriaActual = button.dataset.categoria;
-          renderizarCategorias();
-          renderizarCatalogo();
-        });
+        button.addEventListener('click', () => { categoriaActual = button.dataset.categoria; renderizarCategorias(); renderizarCatalogo(); });
       });
     }
 
     function crearTarjetaProducto(product) {
       const card = document.createElement('article');
       card.className = 'bg-white rounded-xl shadow-md overflow-hidden transition hover:shadow-xl flex min-h-48 fade-in';
-      const imagenProducto = product.foto
-        ? `<img src="${CARPETA_IMAGENES}${encodeURIComponent(product.foto)}" alt="${escaparHtml(product.articulo)}"
-            class="w-full h-full min-h-48 bg-white object-contain p-2 group-hover:scale-105 transition-transform duration-200">
-          `
-        : `<div class="flex min-h-48 w-full items-center justify-center bg-white p-4 text-center text-sm text-gray-500">Foto oficial del frasco pendiente</div>`;
-      card.innerHTML = `
-        <div class="w-2/5 sm:w-1/3 min-h-48 ${product.foto ? 'cursor-pointer group' : ''} bg-white flex items-center justify-center overflow-hidden">
-          ${imagenProducto}
+
+      // Placeholder area for image (will be replaced when loaded)
+      const imageWrapper = document.createElement('div');
+      imageWrapper.className = `w-2/5 sm:w-1/3 min-h-48 ${product.foto ? 'cursor-pointer group' : ''} bg-white flex items-center justify-center overflow-hidden`;
+      const placeholder = document.createElement('div');
+      placeholder.className = 'flex min-h-48 w-full items-center justify-center bg-white p-4 text-center text-sm text-gray-500';
+      placeholder.textContent = 'Cargando imagen...';
+      imageWrapper.appendChild(placeholder);
+
+      const content = document.createElement('div');
+      content.className = 'flex flex-1 flex-col justify-between p-4 min-w-0';
+      content.innerHTML = `
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Cód: ${escaparHtml(product.codigo)}</span>
+            <span class="text-xs text-gray-500">${escaparHtml(product.categoria || 'Accesorios')}</span>
+          </div>
+          <h3 class="text-sm font-semibold text-gray-800 mt-2">${escaparHtml(product.articulo)}</h3>
+          <p class="text-xs text-gray-600 mt-2">${escaparHtml(product.descripcion || '')}</p>
+          <div class="mt-3 flex items-center justify-between gap-2">
+            <span class="text-xs text-gray-500 uppercase font-medium">Precio:</span>
+            <span class="text-base font-bold text-indigo-600">${escaparHtml(product['venta por menor'] || 'Consultar precio')}</span>
+          </div>
         </div>
-        <div class="flex flex-1 flex-col justify-between p-4 min-w-0">
-          <div>
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Cód: ${escaparHtml(product.codigo)}</span>
-              <span class="text-xs text-gray-500">${escaparHtml(product.categoria || 'Accesorios')}</span>
-            </div>
-            <h3 class="text-sm font-semibold text-gray-800 mt-2">${escaparHtml(product.articulo)}</h3>
-            <p class="text-xs text-gray-600 mt-2">${escaparHtml(product.descripcion || '')}</p>
-            <div class="mt-3 flex items-center justify-between gap-2">
-              <span class="text-xs text-gray-500 uppercase font-medium">Precio:</span>
-              <span class="text-base font-bold text-indigo-600">${escaparHtml(product['venta por menor'] || 'Consultar precio')}</span>
-            </div>
-          </div>
-          <div class="flex items-center justify-between bg-gray-50 p-2 mt-3 rounded-lg border border-gray-200">
-            <button type="button" data-action="restar" data-codigo="${escaparHtml(product.codigo)}"
-              aria-label="Quitar ${escaparHtml(product.articulo)}" class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">-</button>
-            <span id="qty-${escaparHtml(product.codigo)}" class="text-sm font-bold text-gray-800">${obtenerCantidad(product.codigo)}</span>
-            <button type="button" data-action="sumar" data-codigo="${escaparHtml(product.codigo)}"
-              aria-label="Agregar ${escaparHtml(product.articulo)}" class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">+</button>
-          </div>
+        <div class="flex items-center justify-between bg-gray-50 p-2 mt-3 rounded-lg border border-gray-200">
+          <button type="button" data-action="restar" data-codigo="${escaparHtml(product.codigo)}" aria-label="Quitar ${escaparHtml(product.articulo)}" class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">-</button>
+          <span id="qty-${escaparHtml(product.codigo)}" class="text-sm font-bold text-gray-800">${obtenerCantidad(product.codigo)}</span>
+          <button type="button" data-action="sumar" data-codigo="${escaparHtml(product.codigo)}" aria-label="Agregar ${escaparHtml(product.articulo)}" class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">+</button>
         </div>
       `;
-      conectarTarjeta(card, product.codigo);
+
+      card.appendChild(imageWrapper);
+      card.appendChild(content);
+
+      // Try loading image with fallback candidates
+      if (product.foto) {
+        loadImageWithFallback(product.foto).then(result => {
+          if (result && result.img) {
+            // replace placeholder with the real image
+            imageWrapper.replaceChild(result.img, placeholder);
+            // clicking image opens modal
+            result.img.addEventListener('click', () => {
+              const modal = document.getElementById('modal');
+              const modalImg = document.getElementById('modal-img');
+              modalImg.src = result.src;
+              modalImg.alt = result.name;
+              modal.classList.remove('hidden');
+            });
+          } else {
+            // no image found -> show friendly placeholder
+            placeholder.textContent = 'Foto oficial del frasco pendiente';
+          }
+        }).catch(err => {
+          console.error('Error al intentar cargar imagen con fallback para', product.foto, err);
+          placeholder.textContent = 'Foto oficial del frasco pendiente';
+        });
+      } else {
+        placeholder.textContent = 'Foto oficial del frasco pendiente';
+      }
+
+      // Connect buttons
+      card.querySelectorAll('button[data-action]').forEach(button => {
+        button.addEventListener('click', () => {
+          const delta = button.dataset.action === 'sumar' ? 1 : -1;
+          cambiarCantidad(product.codigo, delta, productosGlobal, actualizarInterfazTotales, combosGlobal);
+        });
+      });
+
       return card;
     }
 
@@ -178,59 +224,64 @@
         return producto ? `${producto.articulo} (${producto.codigo})` : `Código no encontrado: ${codigoArticulo}`;
       }).join(', ');
       const precio = precioVentaCombo(combo);
+
       const card = document.createElement('article');
       card.className = 'bg-white rounded-xl shadow-md p-5 flex flex-col sm:flex-row gap-5 justify-between fade-in';
-      card.innerHTML = `
-        <div class="flex-1 min-w-0">
-          <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">COMBO</span>
-          <h3 class="text-lg font-semibold text-gray-800 mt-3">${escaparHtml(combo.titulo)}</h3>
-          <p class="text-sm text-gray-600 mt-2">${escaparHtml(componentes)}</p>
-          <p class="text-xs text-gray-500 mt-2">Precio calculado sumando los precios combo de sus productos.</p>
-          <p class="text-lg font-bold text-indigo-600 mt-3">${precio === null
-            ? 'Precio no disponible: revisa los códigos y precios combo.'
-            : '$' + precio.toLocaleString('es-AR')}</p>
-        </div>
-        ${combo.foto ? `<img src="${CARPETA_IMAGENES}${encodeURIComponent(combo.foto)}"
-          alt="Imagen de ${escaparHtml(combo.titulo)}"
-          class="w-full sm:w-1/3 max-h-96 object-contain rounded-lg cursor-pointer bg-gray-50">` : ''}
-        <div class="flex items-center justify-between bg-gray-50 p-2 mt-4 sm:mt-0 rounded-lg border border-gray-200 self-end sm:self-center">
-          <button type="button" data-action="restar" data-codigo="${codigo}" aria-label="Quitar combo"
-            class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">-</button>
-          <span id="qty-${codigo}" class="text-sm font-bold text-gray-800">${obtenerCantidad(codigo)}</span>
-          <button type="button" data-action="sumar" data-codigo="${codigo}" aria-label="Agregar combo" ${precio === null ? 'disabled' : ''}
-            class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-40">+</button>
-        </div>
-      `;
-      conectarTarjeta(card, codigo);
-      return card;
-    }
 
-    function conectarTarjeta(card, codigo) {
-      const image = card.querySelector('img');
-      if (image) {
-        image.addEventListener('click', () => {
-          const modal = document.getElementById('modal');
-          const modalImg = document.getElementById('modal-img');
-          modalImg.src = image.src;
-          modalImg.alt = image.alt;
-          modal.classList.remove('hidden');
-        });
-        // Mejor manejo de errores: mostrar placeholder y loguear la ruta fallida
-        image.addEventListener('error', (e) => {
-          console.error('Error cargando imagen:', image.src, e);
-          const placeholder = Object.assign(document.createElement('div'), {
-            className: 'flex min-h-48 w-full items-center justify-center bg-white p-4 text-center text-sm text-gray-500',
-            textContent: 'Foto oficial del frasco pendiente'
-          });
-          image.replaceWith(placeholder);
-        });
+      const left = document.createElement('div');
+      left.className = 'flex-1 min-w-0';
+      left.innerHTML = `
+        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">COMBO</span>
+        <h3 class="text-lg font-semibold text-gray-800 mt-3">${escaparHtml(combo.titulo)}</h3>
+        <p class="text-sm text-gray-600 mt-2">${escaparHtml(componentes)}</p>
+        <p class="text-xs text-gray-500 mt-2">Precio calculado sumando los precios combo de sus productos.</p>
+        <p class="text-lg font-bold text-indigo-600 mt-3">${precio === null ? 'Precio no disponible: revisa los códigos y precios combo.' : '$' + precio.toLocaleString('es-AR')}</p>
+      `;
+
+      const rightWrapper = document.createElement('div');
+      rightWrapper.className = 'w-full sm:w-1/3 max-h-96 object-contain rounded-lg cursor-pointer bg-gray-50 flex items-center justify-center overflow-hidden';
+      const placeholder = document.createElement('div');
+      placeholder.className = 'flex min-h-48 w-full items-center justify-center bg-white p-4 text-center text-sm text-gray-500';
+      placeholder.textContent = combo.foto ? 'Cargando imagen...' : '';
+      rightWrapper.appendChild(placeholder);
+
+      if (combo.foto) {
+        loadImageWithFallback(combo.foto).then(result => {
+          if (result && result.img) {
+            rightWrapper.replaceChild(result.img, placeholder);
+            result.img.addEventListener('click', () => {
+              const modal = document.getElementById('modal');
+              const modalImg = document.getElementById('modal-img');
+              modalImg.src = result.src;
+              modalImg.alt = result.name;
+              modal.classList.remove('hidden');
+            });
+          } else {
+            placeholder.textContent = 'Imagen del combo pendiente';
+          }
+        }).catch(err => { console.error('Error cargando imagen combo', combo.foto, err); placeholder.textContent = 'Imagen del combo pendiente'; });
       }
+
+      const controls = document.createElement('div');
+      controls.className = 'flex items-center justify-between bg-gray-50 p-2 mt-4 sm:mt-0 rounded-lg border border-gray-200 self-end sm:self-center';
+      controls.innerHTML = `
+        <button type="button" data-action="restar" data-codigo="${codigo}" aria-label="Quitar combo" class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">-</button>
+        <span id="qty-${codigo}" class="text-sm font-bold text-gray-800">${obtenerCantidad(codigo)}</span>
+        <button type="button" data-action="sumar" data-codigo="${codigo}" aria-label="Agregar combo" ${precio === null ? 'disabled' : ''} class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-40">+</button>
+      `;
+
+      card.appendChild(left);
+      if (combo.foto) card.appendChild(rightWrapper);
+      card.appendChild(controls);
+
       card.querySelectorAll('button[data-action]').forEach(button => {
         button.addEventListener('click', () => {
           const delta = button.dataset.action === 'sumar' ? 1 : -1;
           cambiarCantidad(codigo, delta, productosGlobal, actualizarInterfazTotales, combosGlobal);
         });
       });
+
+      return card;
     }
 
     function renderizarCatalogo() {
@@ -238,16 +289,11 @@
       catalogContainer.replaceChildren();
       const fragment = document.createDocumentFragment();
       const verCombos = categoriaActual === 'Todos' || categoriaActual === 'Combos';
-      const productos = categoriaActual === 'Todos'
-        ? productosGlobal
-        : categoriaActual === 'Combos'
-          ? []
-          : productosGlobal.filter(product => product.categoria === categoriaActual);
+      const productos = categoriaActual === 'Todos' ? productosGlobal : categoriaActual === 'Combos' ? [] : productosGlobal.filter(product => product.categoria === categoriaActual);
 
       productos.forEach(product => fragment.appendChild(crearTarjetaProducto(product)));
-      if (verCombos) {
-        combosGlobal.forEach((combo, index) => fragment.appendChild(crearTarjetaCombo(combo, index)));
-      }
+      if (verCombos) combosGlobal.forEach((combo, index) => fragment.appendChild(crearTarjetaCombo(combo, index)));
+
       if (!fragment.childNodes.length) {
         const mensaje = document.createElement('p');
         mensaje.className = 'text-center text-gray-500 col-span-full';
@@ -259,10 +305,7 @@
 
     async function loadProducts() {
       try {
-        const [productosResponse, combosResponse] = await Promise.all([
-          fetch('datos-productos.json'),
-          fetch('combos.json')
-        ]);
+        const [productosResponse, combosResponse] = await Promise.all([fetch('datos-productos.json'), fetch('combos.json')]);
         if (!productosResponse.ok) throw new Error('No se pudo cargar datos-productos.json');
         if (!combosResponse.ok) throw new Error('No se pudo cargar combos.json');
         productosGlobal = await productosResponse.json();
@@ -275,29 +318,16 @@
       }
     }
 
-    // Configuración de botones globales de la barra flotante
-    document.getElementById('btn-limpiar').addEventListener('click', () => {
-      limpiarPedido(productosGlobal, actualizarInterfazTotales, combosGlobal);
-    });
+    // Botones globales
+    document.getElementById('btn-limpiar').addEventListener('click', () => { limpiarPedido(productosGlobal, actualizarInterfazTotales, combosGlobal); });
+    document.getElementById('btn-whatsapp').addEventListener('click', () => { enviarWhatsApp(productosGlobal, NUMERO_WHATSAPP, combosGlobal).catch(error => { console.error('No se pudo preparar el pedido para WhatsApp:', error); window.alert('No se pudo generar la imagen del pedido. Intenta nuevamente.'); }); });
 
-    document.getElementById('btn-whatsapp').addEventListener('click', () => {
-      enviarWhatsApp(productosGlobal, NUMERO_WHATSAPP, combosGlobal)
-        .catch(error => {
-          console.error('No se pudo preparar el pedido para WhatsApp:', error);
-          window.alert('No se pudo generar la imagen del pedido. Intenta nuevamente.');
-        });
-    });
-
-    // Control del modal de imagen
+    // Modal y arranque
     document.addEventListener('DOMContentLoaded', () => {
       loadProducts();
       const modal = document.getElementById('modal');
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.add('hidden');
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') modal.classList.add('hidden');
-      });
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.add('hidden'); });
     });
   </script>
 </body>
