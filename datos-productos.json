@@ -322,5 +322,14 @@
     "foto": "1000293572.heic",
     "categoria": "Accesorios",
     "descripcion": "Perfume Pura de 8 ml con difusor para aromatizar el interior del vehículo. Fragancia Invictus."
+  },
+  {
+    "articulo": "PURA VAINILLA (PERFUME DIFUSOR) 8 ML",
+    "codigo": "A039",
+    "categoria": "Accesorios",
+    "descripcion": "Perfume Pura de 8 ml con difusor para aromatizar el interior del vehículo. Fragancia Vainilla",
+    "precio combo": "2300",
+    "venta por menor": "3500",
+    "foto": "1000293572.heic"
   }
 ]
