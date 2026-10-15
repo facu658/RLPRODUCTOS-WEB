@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Catálogo de Productos y Pedidos</title>
-  <!-- Importamos Tailwind CSS para los estilos -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes fadeIn {
@@ -23,16 +22,13 @@
 
     <nav id="category-tabs" class="flex flex-wrap justify-center gap-2 mb-8" aria-label="Categorías de productos"></nav>
 
-    <!-- Cuadrícula de Productos -->
     <div id="product-catalog" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
 
-    <!-- Modal para imagen a pantalla completa -->
     <div id="modal" class="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50 hidden">
       <img id="modal-img" src="" alt="Imagen ampliada" class="max-h-[90vh] max-w-[90vw] rounded-lg bg-white object-contain shadow-2xl">
     </div>
   </div>
 
-  <!-- Barra flotante de Pedido / WhatsApp -->
   <div id="cart-bar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-40 transform translate-y-full transition-transform duration-300">
     <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
       <div>
@@ -49,24 +45,22 @@
     <p class="max-w-4xl mx-auto mt-2 text-center text-xs text-gray-500">El JPG se descarga para adjuntarlo al chat antes de enviar el pedido.</p>
   </div>
 
-  <!-- Script principal modular -->
   <script type="module">
     import { cambiarCantidad, limpiarPedido, calcularTotales, enviarWhatsApp, obtenerCantidad } from './pedido.js';
 
     const CARPETA_IMAGENES = 'imagenes/';
-    const NUMERO_WHATSAPP = "5493813197488"; // Cambia por tu número
+    const NUMERO_WHATSAPP = "5493813197488";
     const CATEGORIAS = ['Cera', 'Revividores', 'Shampoo', 'Accesorios', 'Limpiadores multi uso', 'Combos'];
 
     let productosGlobal = [];
     let combosGlobal = [];
     let categoriaActual = 'Todos';
+    let refreshTimer = null;
 
-    // --- utilidades ---
     function escaparHtml(valor = '') {
       return String(valor).replace(/[&<>"']/g, caracter => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[caracter]);
     }
 
-    // Intenta cargar una imagen probando varias extensiones y variaciones de mayúsculas/minúsculas
     function loadImageWithFallback(originalName) {
       const extensions = ['.webp', '.jpeg', '.jpg', '.png', '.svg'];
       const candidates = [];
@@ -77,13 +71,9 @@
       const base = hasExt ? originalName.replace(/\.[^/.]+$/, '') : originalName;
       const providedExt = hasExt ? originalName.match(/\.[^/.]+$/)[0] : null;
 
-      // If original included extension, try exact first
       if (hasExt) candidates.push(originalName);
-
-      // Try common extensions
       for (const ext of extensions) candidates.push(base + ext);
 
-      // Also try lowercase/uppercase versions
       const more = [];
       candidates.forEach(c => { more.push(c.toLowerCase()); more.push(c.toUpperCase()); });
       const all = Array.from(new Set([...candidates, ...more]));
@@ -99,7 +89,7 @@
           img.alt = originalName;
           img.className = 'w-full h-full min-h-48 bg-white object-contain p-2 group-hover:scale-105 transition-transform duration-200';
           img.onload = () => resolve({ img, src: url, name: candidate });
-          img.onerror = () => setTimeout(tryNext, 10); // small delay then try next
+          img.onerror = () => setTimeout(tryNext, 10);
         }
         tryNext();
       });
@@ -122,10 +112,16 @@
       const nav = document.getElementById('category-tabs');
       const categorias = ['Todos', ...CATEGORIAS];
       nav.innerHTML = categorias.map(categoria => `
-        <button type="button" data-categoria="${escaparHtml(categoria)}" class="rounded-full px-4 py-2 text-sm font-semibold transition ${categoriaActual === categoria ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-indigo-50'}">${escaparHtml(categoria)}</button>
+        <button type="button" data-categoria="${escaparHtml(categoria)}" class="rounded-full px-4 py-2 text-sm font-semibold transition ${categoriaActual === categoria ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-200'}">
+          ${escaparHtml(categoria)}
+        </button>
       `).join('');
       nav.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', () => { categoriaActual = button.dataset.categoria; renderizarCategorias(); renderizarCatalogo(); });
+        button.addEventListener('click', () => {
+          categoriaActual = button.dataset.categoria;
+          renderizarCategorias();
+          renderizarCatalogo();
+        });
       });
     }
 
@@ -133,7 +129,6 @@
       const card = document.createElement('article');
       card.className = 'bg-white rounded-xl shadow-md overflow-hidden transition hover:shadow-xl flex min-h-48 fade-in';
 
-      // Placeholder area for image (will be replaced when loaded)
       const imageWrapper = document.createElement('div');
       imageWrapper.className = `w-2/5 sm:w-1/3 min-h-48 ${product.foto ? 'cursor-pointer group' : ''} bg-white flex items-center justify-center overflow-hidden`;
       const placeholder = document.createElement('div');
@@ -166,13 +161,10 @@
       card.appendChild(imageWrapper);
       card.appendChild(content);
 
-      // Try loading image with fallback candidates
       if (product.foto) {
         loadImageWithFallback(product.foto).then(result => {
           if (result && result.img) {
-            // replace placeholder with the real image
             imageWrapper.replaceChild(result.img, placeholder);
-            // clicking image opens modal
             result.img.addEventListener('click', () => {
               const modal = document.getElementById('modal');
               const modalImg = document.getElementById('modal-img');
@@ -181,18 +173,16 @@
               modal.classList.remove('hidden');
             });
           } else {
-            // no image found -> show friendly placeholder
             placeholder.textContent = 'Foto oficial del frasco pendiente';
           }
         }).catch(err => {
-          console.error('Error al intentar cargar imagen con fallback para', product.foto, err);
+          console.error('Error al intentar cargar imagen para', product.foto, err);
           placeholder.textContent = 'Foto oficial del frasco pendiente';
         });
       } else {
         placeholder.textContent = 'Foto oficial del frasco pendiente';
       }
 
-      // Connect buttons
       card.querySelectorAll('button[data-action]').forEach(button => {
         button.addEventListener('click', () => {
           const delta = button.dataset.action === 'sumar' ? 1 : -1;
@@ -267,7 +257,7 @@
       controls.innerHTML = `
         <button type="button" data-action="restar" data-codigo="${codigo}" aria-label="Quitar combo" class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100">-</button>
         <span id="qty-${codigo}" class="text-sm font-bold text-gray-800">${obtenerCantidad(codigo)}</span>
-        <button type="button" data-action="sumar" data-codigo="${codigo}" aria-label="Agregar combo" ${precio === null ? 'disabled' : ''} class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-40">+</button>
+        <button type="button" data-action="sumar" data-codigo="${codigo}" aria-label="Agregar combo" ${precio === null ? 'disabled' : ''} class="w-8 h-8 bg-white border border-gray-300 rounded font-bold text-gray-600 hover:bg-gray-100 ${precio === null ? 'opacity-50 cursor-not-allowed' : ''}">+</button>
       `;
 
       card.appendChild(left);
@@ -305,7 +295,11 @@
 
     async function loadProducts() {
       try {
-        const [productosResponse, combosResponse] = await Promise.all([fetch('datos-productos.json'), fetch('combos.json')]);
+        const ts = Date.now();
+        const [productosResponse, combosResponse] = await Promise.all([
+          fetch(`datos-productos.json?ts=${ts}`, { cache: 'no-store' }),
+          fetch(`combos.json?ts=${ts}`, { cache: 'no-store' })
+        ]);
         if (!productosResponse.ok) throw new Error('No se pudo cargar datos-productos.json');
         if (!combosResponse.ok) throw new Error('No se pudo cargar combos.json');
         productosGlobal = await productosResponse.json();
@@ -314,17 +308,23 @@
         renderizarCatalogo();
       } catch (error) {
         console.error('Error al cargar el catálogo:', error);
-        document.getElementById('product-catalog').innerHTML = `<p class="text-center text-red-500 col-span-full">No se pudo cargar el catálogo. Asegúrate de usar un servidor local (ej. Live Server) o de que los archivos JSON estén accesibles.</p>`;
+        document.getElementById('product-catalog').innerHTML = `<p class="text-center text-red-500 col-span-full">No se pudo cargar el catálogo. Asegúrate de usar un servidor local (ej. Live Server) o de que el JSON esté disponible.</p>`;
       }
     }
 
-    // Botones globales
-    document.getElementById('btn-limpiar').addEventListener('click', () => { limpiarPedido(productosGlobal, actualizarInterfazTotales, combosGlobal); });
-    document.getElementById('btn-whatsapp').addEventListener('click', () => { enviarWhatsApp(productosGlobal, NUMERO_WHATSAPP, combosGlobal).catch(error => { console.error('No se pudo preparar el pedido para WhatsApp:', error); window.alert('No se pudo generar la imagen del pedido. Intenta nuevamente.'); }); });
+    function startAutoRefresh() {
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(() => {
+        loadProducts().catch(err => console.error('Auto-refresh error:', err));
+      }, 15000);
+    }
 
-    // Modal y arranque
+    document.getElementById('btn-limpiar').addEventListener('click', () => { limpiarPedido(productosGlobal, actualizarInterfazTotales, combosGlobal); });
+    document.getElementById('btn-whatsapp').addEventListener('click', () => { enviarWhatsApp(productosGlobal, NUMERO_WHATSAPP, combosGlobal).catch(error => { console.error('No se pudo preparar el WhatsApp', error); }); });
+
     document.addEventListener('DOMContentLoaded', () => {
       loadProducts();
+      startAutoRefresh();
       const modal = document.getElementById('modal');
       modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.add('hidden'); });

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin móvil - RLPRODUCTOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: linear-gradient(135deg, #f8fafc, #eef2ff); }
+    .glass { backdrop-filter: blur(10px); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800">
+  <div class="max-w-6xl mx-auto px-4 py-6 md:py-10">
+    <div class="bg-white/80 glass shadow-xl rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white">
+        <h1 class="text-2xl md:text-3xl font-bold">Admin móvil - Catálogo RLProductos</h1>
+        <p class="text-indigo-100 mt-1">Actualiza precios, artículos y fotos desde tu celular</p>
+      </div>
+
+      <div id="loginPanel" class="p-5 md:p-8">
+        <div class="grid md:grid-cols-2 gap-4 max-w-xl">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Token de GitHub (PAT con scope repo)</label>
+            <input id="githubToken" type="password" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="ghp_xxxxxxxxxxxxx" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Owner</label>
+            <input id="repoOwner" value="facu658" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Repo</label>
+            <input id="repoName" value="RLPRODUCTOS-WEB" class="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mt-5">
+          <button id="loginBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm">
+            Guardar token y entrar
+          </button>
+          <button id="clearTokenBtn" type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2.5 rounded-xl font-semibold shadow-sm">
+            Borrar token
+          </button>
+        </div>
+
+        <div class="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          Importante: el token necesita permisos de lectura/escritura sobre el repositorio. Si lo usás desde el celular, guardarlo en el navegador local es funcional para una prueba rápida. Para producción, conviene usar sesión autenticada y no guardar token en el frontend.
+        </div>
+      </div>
+
+      <div id="appPanel" class="hidden p-5 md:p-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <p class="text-sm uppercase tracking-wide text-indigo-600 font-semibold">Conectado</p>
+            <h2 id="repoLabel" class="text-xl font-bold text-slate-800">Cargando catálogo...</h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="refreshBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl font-medium">Refrescar</button>
+            <button id="saveAllBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-semibold shadow-sm">Guardar todos</button>
+          </div>
+        </div>
+
+        <div class="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+          <h3 class="text-lg font-bold text-slate-800 mb-3">Agregar producto nuevo</h3>
+          <form id="newProductForm" class="grid md:grid-cols-2 xl:grid-cols-6 gap-3">
+            <input name="codigo" placeholder="Código" class="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+            <input name="articulo" placeholder="Artículo" class="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:col-span-2" required />
+            <input name="categoria" placeholder="Categoría" class="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" value="Accesorios" />
+            <input name="precioCombo" placeholder="Precio combo" type="number" step="0.01" class="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input name="precioMenor" placeholder="Venta menor" type="number" step="0.01" class="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input name="descripcion" placeholder="Descripción" class="rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 md:col-span-2 xl:col-span-2" />
+            <input name="foto" type="file" accept="image/*" class="rounded-xl border border-slate-300 p-2 file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-indigo-100 file:text-indigo-700 md:col-span-2 xl:col-span-2" />
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 shadow-sm xl:col-span-1">Agregar</button>
+          </form>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm border border-slate-200 rounded-xl overflow-hidden">
+            <thead class="bg-slate-100 text-slate-700">
+              <tr>
+                <th class="px-3 py-2 text-left">Código</th>
+                <th class="px-3 py-2 text-left">Artículo</th>
+                <th class="px-3 py-2 text-left">Categoría</th>
+                <th class="px-3 py-2 text-left">Precio combo</th>
+                <th class="px-3 py-2 text-left">Venta menor</th>
+                <th class="px-3 py-2 text-left">Foto</th>
+                <th class="px-3 py-2 text-left">Guardar</th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOKEN_KEY = 'rlproductos_admin_token';
+    const defaultOwner = 'facu658';
+    const defaultRepo = 'RLPRODUCTOS-WEB';
+    let catalog = [];
+    let fileSha = null;
+    let repoOwner = defaultOwner;
+    let repoName = defaultRepo;
+
+    const loginPanel = document.getElementById('loginPanel');
+    const appPanel = document.getElementById('appPanel');
+    const repoLabel = document.getElementById('repoLabel');
+    const productTableBody = document.getElementById('productTableBody');
+
+    function readToken() {
+      return localStorage.getItem(TOKEN_KEY) || '';
+    }
+
+    function persistToken(token) {
+      if (token) localStorage.setItem(TOKEN_KEY, token);
+      else localStorage.removeItem(TOKEN_KEY);
+    }
+
+    function initFormFromStorage() {
+      const token = readToken();
+      if (token) {
+        document.getElementById('githubToken').value = token;
+        repoOwner = document.getElementById('repoOwner').value || defaultOwner;
+        repoName = document.getElementById('repoName').value || defaultRepo;
+        showApp();
+      }
+    }
+
+    function showApp() {
+      loginPanel.classList.add('hidden');
+      appPanel.classList.remove('hidden');
+      repoLabel.textContent = `${repoOwner}/${repoName}`;
+    }
+
+    function showLogin() {
+      appPanel.classList.add('hidden');
+      loginPanel.classList.remove('hidden');
+    }
+
+    function safeBase64(input) {
+      const utf8Bytes = new TextEncoder().encode(input);
+      let binary = '';
+      utf8Bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+      });
+      return btoa(binary);
+    }
+
+    function decodeGithubFileContent(content) {
+      const normalized = content.replace(/\n/g, '');
+      const binary = atob(normalized);
+      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    function formatMoney(value) {
+      const numeric = Number(value || 0);
+      return Number.isFinite(numeric) ? numeric.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00';
+    }
+
+    function getRepoUrl(path = '') {
+      const base = `https://api.github.com/repos/${repoOwner}/${repoName}/contents`;
+      return path ? `${base}/${path}` : base;
+    }
+
+    async function fetchJsonFile() {
+      const token = readToken();
+      if (!token) throw new Error('Falta token');
+
+      const response = await fetch(getRepoUrl('datos-productos.json'), {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`No se pudo cargar datos-productos.json: ${response.status} - ${text}`);
+      }
+
+      const data = await response.json();
+      fileSha = data.sha;
+      const parsed = JSON.parse(decodeGithubFileContent(data.content));
+      catalog = Array.isArray(parsed) ? parsed : [];
+      renderTable();
+    }
+
+    function getImageUrl(filename) {
+      if (!filename) return 'https://placehold.co/200x200/eee/999?text=Sin+foto';
+      const clean = String(filename).startsWith('imagenes/') ? String(filename) : `imagenes/${String(filename).replace(/^\//,'')}`;
+      return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${clean}`;
+    }
+
+    function renderTable() {
+      productTableBody.innerHTML = catalog.map((product, index) => {
+        const foto = product.foto || '';
+        return `
+          <tr class="border-b border-slate-200 align-top">
+            <td class="px-3 py-3"><input data-index="${index}" data-field="codigo" value="${escapeHtml(product.codigo || '')}" class="w-24 rounded-lg border border-slate-300 px-2 py-1.5" /></td>
+            <td class="px-3 py-3"><input data-index="${index}" data-field="articulo" value="${escapeHtml(product.articulo || '')}" class="w-52 rounded-lg border border-slate-300 px-2 py-1.5" /></td>
+            <td class="px-3 py-3"><input data-index="${index}" data-field="categoria" value="${escapeHtml(product.categoria || '')}" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5" /></td>
+            <td class="px-3 py-3"><input data-index="${index}" data-field="precio combo" value="${escapeHtml(product['precio combo'] || '')}" class="w-28 rounded-lg border border-slate-300 px-2 py-1.5" /></td>
+            <td class="px-3 py-3"><input data-index="${index}" data-field="venta por menor" value="${escapeHtml(product['venta por menor'] || '')}" class="w-28 rounded-lg border border-slate-300 px-2 py-1.5" /></td>
+            <td class="px-3 py-3">
+              <div class="flex items-center gap-2">
+                <input data-index="${index}" type="file" accept="image/*" class="max-w-[140px] text-xs" />
+                <img src="${getImageUrl(foto)}" alt="${escapeHtml(product.articulo || 'Foto')}" class="w-14 h-14 object-cover rounded border border-slate-200" onerror="this.src='https://placehold.co/100x100/f1f5f9/64748b?text=Foto'" />
+              </div>
+            </td>
+            <td class="px-3 py-3">
+              <button data-index="${index}" data-action="save-row" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl font-medium">Guardar</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      productTableBody.querySelectorAll('[data-action="save-row"]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const index = Number(button.dataset.index);
+          await saveRow(index);
+        });
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    async function uploadImage(file) {
+      const token = readToken();
+      const safeFileName = file.name.replace(/\s+/g, '_');
+      const targetPath = `imagenes/${safeFileName}`;
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      bytes.forEach((b) => binary += String.fromCharCode(b));
+      const content = btoa(binary);
+
+      const response = await fetch(getRepoUrl(targetPath), {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Upload image ${safeFileName}`,
+          content,
+          branch: 'main'
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Fallo al subir la foto: ${response.status} - ${text}`);
+      }
+
+      return safeFileName;
+    }
+
+    async function saveCatalog() {
+      const token = readToken();
+      const jsonString = JSON.stringify(catalog, null, 2);
+      const payload = {
+        message: 'Actualizar catálogo desde admin móvil',
+        content: safeBase64(jsonString),
+        sha: fileSha,
+        branch: 'main'
+      };
+
+      const response = await fetch(getRepoUrl('datos-productos.json'), {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`No se pudo guardar datos-productos.json: ${response.status} - ${text}`);
+      }
+
+      const data = await response.json();
+      fileSha = data.content.sha;
+      return true;
+    }
+
+    async function saveRow(index) {
+      const row = productTableBody.querySelectorAll('tr')[index];
+      if (!row) return;
+      const current = { ...catalog[index] };
+
+      current.codigo = row.querySelector('[data-field="codigo"]').value.trim();
+      current.articulo = row.querySelector('[data-field="articulo"]').value.trim();
+      current.categoria = row.querySelector('[data-field="categoria"]').value.trim() || 'Accesorios';
+      current['precio combo'] = row.querySelector('[data-field="precio combo"]').value.trim();
+      current['venta por menor'] = row.querySelector('[data-field="venta por menor"]').value.trim();
+
+      const fileInput = row.querySelector('input[type="file"]');
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        const filename = await uploadImage(fileInput.files[0]);
+        current.foto = filename;
+      }
+
+      catalog[index] = current;
+      await saveCatalog();
+      await fetchJsonFile();
+      alert('Producto guardado correctamente.');
+    }
+
+    async function addNewProduct(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const codigo = String(formData.get('codigo') || '').trim();
+      const articulo = String(formData.get('articulo') || '').trim();
+      if (!codigo || !articulo) {
+        alert('Faltan código o artículo.');
+        return;
+      }
+
+      const file = formData.get('foto');
+      let foto = null;
+      if (file && file.name) {
+        foto = await uploadImage(file);
+      }
+
+      const nuevo = {
+        articulo,
+        codigo,
+        categoria: String(formData.get('categoria') || 'Accesorios').trim(),
+        descripcion: String(formData.get('descripcion') || '').trim(),
+        'precio combo': String(formData.get('precioCombo') || '').trim(),
+        'venta por menor': String(formData.get('precioMenor') || '').trim(),
+        foto
+      };
+
+      catalog.push(nuevo);
+      await saveCatalog();
+      form.reset();
+      await fetchJsonFile();
+      alert('Producto agregado correctamente.');
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const token = document.getElementById('githubToken').value.trim();
+      repoOwner = document.getElementById('repoOwner').value.trim() || defaultOwner;
+      repoName = document.getElementById('repoName').value.trim() || defaultRepo;
+      if (!token) {
+        alert('Ingresá un token de GitHub válido.');
+        return;
+      }
+      persistToken(token);
+      try {
+        await fetchJsonFile();
+        showApp();
+      } catch (error) {
+        alert(error.message || 'No se pudo conectar al repositorio.');
+      }
+    });
+
+    document.getElementById('clearTokenBtn').addEventListener('click', () => {
+      persistToken('');
+      showLogin();
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      try {
+        await fetchJsonFile();
+        alert('Catálogo actualizado.');
+      } catch (error) {
+        alert(error.message || 'Problema al refrescar.');
+      }
+    });
+
+    document.getElementById('saveAllBtn').addEventListener('click', async () => {
+      try {
+        await saveCatalog();
+        alert('Cambios guardados en GitHub.');
+      } catch (error) {
+        alert(error.message || 'No se pudieron guardar los cambios.');
+      }
+    });
+
+    document.getElementById('newProductForm').addEventListener('submit', addNewProduct);
+    initFormFromStorage();
+  </script>
+</body>
+</html>
