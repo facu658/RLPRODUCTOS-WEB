@@ -340,5 +340,14 @@
     "precio combo": "6500",
     "venta por menor": "6700",
     "foto": null
+  },
+  {
+    "articulo": "ANTI FOG 120ML",
+    "codigo": "A038",
+    "categoria": "Accesorios",
+    "descripcion": "",
+    "precio combo": "3800",
+    "venta por menor": "4000",
+    "foto": null
   }
 ]
