@@ -331,5 +331,14 @@
     "precio combo": "$2.300,00",
     "venta por menor": "$3.500,00",
     "foto": "1000293572.heic"
+  },
+  {
+    "articulo": "CLEAN VISION 600 ML",
+    "codigo": "A037",
+    "categoria": "Limpiador multiuso",
+    "descripcion": "",
+    "precio combo": "6500",
+    "venta por menor": "6700",
+    "foto": null
   }
 ]
